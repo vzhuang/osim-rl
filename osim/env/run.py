@@ -73,7 +73,7 @@ class RunEnv(OsimEnv):
         # Get the pelvis X delta
         delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
 
-        return delta_x - math.sqrt(lig_pen) * 0.0001
+        return delta_x - math.sqrt(lig_pen) * 10e-8
 
     def is_pelvis_too_low(self):
         return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
@@ -119,6 +119,9 @@ class RunEnv(OsimEnv):
                 return ret
         return [100,0,0]
         
+    def _step(self, action):
+        self.last_state = self.current_state
+        return super(RunEnv, self)._step(action)
 
     def get_observation(self):
         bodies = ['head', 'pelvis', 'torso', 'toes_l', 'toes_r', 'talus_l', 'talus_r']
