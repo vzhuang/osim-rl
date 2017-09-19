@@ -42,6 +42,8 @@ class RunEnv(OsimEnv):
             manager.setFinalTime(0.0)
             manager.integrate(state)
 
+        self.imitate_gait = False
+
     def setup(self, difficulty, seed=None):
         # create the new env
         # set up obstacles
@@ -62,18 +64,37 @@ class RunEnv(OsimEnv):
         self.current_state = self.last_state
         return self.last_state
 
+    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices):
+        self.imitate_gait = True
+        self.left_obs = left_obs
+        self.right_obs = right_obs
+        self.cycle_length = cycle_length
+        self.match_indices = match_indices
+
     def compute_reward(self):
+        if self.imitate_gait:
+            cycle = (self.istep / self.cycle_length) % 2
+            timestep = self.istep % self.cycle_length
+            obs_arr = self.left_obs
+            if cycle:
+                obs_arr = self.right_obs                
+            reward = 0
+            for idx in self.match_indices:
+                reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
+            return 1 - np.sqrt(reward) / len(self.match_indices)
+            
+        else:
         # Compute ligaments penalty
-        lig_pen = 0
-        # Get ligaments
-        for j in range(20, 26):
-            lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
-            lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
+            lig_pen = 0
+            # Get ligaments
+            for j in range(20, 26):
+                lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
+                lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
 
-        # Get the pelvis X delta
-        delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
+            # Get the pelvis X delta
+            delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
 
-        return delta_x - math.sqrt(lig_pen) * 10e-8
+            return delta_x - math.sqrt(lig_pen) * 10e-8
 
     def is_pelvis_too_low(self):
         return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
