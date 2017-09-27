@@ -71,18 +71,37 @@ class RunEnv(OsimEnv):
         self.cycle_length = cycle_length
         self.match_indices = match_indices
 
-    def compute_reward(self):
+    def compute_reward(self):        
         if self.imitate_gait:
             cycle = (self.istep / self.cycle_length) % 2
             timestep = self.istep % self.cycle_length
             obs_arr = self.left_obs
             if cycle:
-                obs_arr = self.right_obs                
-            reward = 0
-            for idx in self.match_indices:
-                reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
-            return 1 - np.sqrt(reward) / len(self.match_indices)
+                obs_arr = self.right_obs
+            reward = 0.1 - (obs_arr[timestep][8] - self.current_state[8])**2 - (obs_arr[timestep][11] - self.current_state[11])**2
+            # reward = 0
+            # for idx in self.match_indices:
+            #     reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
+            # with open('/home/ubuntu/imitate_log.txt', 'a') as f:
+            #     f.write('timestep ' + str(timestep)+'\n')
+            #     for i in range(41):
+            #         f.write('feature ' + str(i) + ': ')
+            #         f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
             
+            #     f.close()                
+            # return 1 - np.sqrt(reward) / len(self.match_indices)
+        # Compute ligaments penalty
+            lig_pen = 0
+            # Get ligaments
+            for j in range(20, 26):
+                lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
+                lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
+
+            # Get the pelvis X delta
+            delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
+
+            reward += delta_x - math.sqrt(lig_pen) * 10e-8            
+            return reward
         else:
         # Compute ligaments penalty
             lig_pen = 0
