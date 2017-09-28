@@ -72,6 +72,7 @@ agent.load_weights(args.model)
 
 # Create environment
 observation = client.env_create(args.token)
+print observation
 
 # Run a single step
 #
@@ -80,7 +81,7 @@ while True:
     v = np.array(observation).reshape((-1,1,env.observation_space.shape[0]))
     [observation, reward, done, info] = client.env_step(actor.predict(v)[0].tolist())
     # print(observation)
-    print observation[18], observation[19]
+    #print observation, reward
     if done:
         observation = client.env_reset()
         if not observation:

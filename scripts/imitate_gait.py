@@ -76,10 +76,12 @@ def eval_poly(coeffs, x):
 
 cycle_length = 71
 
-nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-                   16, 17, 18, 19, 26, 27, 28, 29, 30, 31,
-                   32, 33, 34, 35, 36, 37]
+# nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+#                    16, 17, 18, 19, 26, 27, 28, 29, 30, 31,
+#                    32, 33, 34, 35, 36, 37]
 
+nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 18, 19, 26, 27, 28, 29, 30, 31,
+                   32, 33, 34, 35, 36, 37]
 left_stance_obs = []
 right_stance_obs = []
 
@@ -171,12 +173,12 @@ for i in range(cycle_length):
 
     # 6-11: rotation of each ankle, knee, hip
     # order is: ['hip_r','knee_r','ankle_r','hip_l','knee_l','ankle_l']
-    obs[6] = eval_poly(qd_coeffs_wrt_time[3], t)
-    obs[7] = eval_poly(qd_coeffs_wrt_time[4], t)
-    obs[8] = eval_poly(qd_coeffs_wrt_time[5], t)
-    obs[9] = eval_poly(qd_coeffs_wrt_time[2], t)
-    obs[10] = eval_poly(qd_coeffs_wrt_time[1], t)
-    obs[11] = eval_poly(qd_coeffs_wrt_time[0], t)
+    obs[6] = eval_poly(qd_coeffs[3], tau)
+    obs[7] = eval_poly(qd_coeffs[4], tau)
+    obs[8] = eval_poly(qd_coeffs[5], tau)
+    obs[9] = eval_poly(qd_coeffs[2], tau)
+    obs[10] = eval_poly(qd_coeffs[1], tau)
+    obs[11] = eval_poly(qd_coeffs[0], tau)
     
     # 12-17: angular velocity of each ankle, knee, hip
     obs[12] = eval_poly(dot_qd_coeffs[3], tau)
