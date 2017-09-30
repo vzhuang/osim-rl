@@ -81,6 +81,7 @@ class RunEnv(OsimEnv):
             reward = 0
             for idx in self.match_indices:
                 reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
+            
             return 1 - np.sqrt(reward) / len(self.match_indices)
             
         else:

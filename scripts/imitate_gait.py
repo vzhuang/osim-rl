@@ -31,7 +31,7 @@ parser.add_argument('--token', dest='token', action='store', required=False)
 args = parser.parse_args()
 
 # Load gait parameters
-gait_path = '/home/ubuntu/new_params.mat'
+gait_path = '/home/ubuntu/still_params.mat'
 gait_params = scipy.io.loadmat(gait_path)
 tau_coeffs = gait_params['tau_coeffs_wrt_time'][0]
 
@@ -100,12 +100,12 @@ for i in range(cycle_length):
 
     # 6-11: rotation of each ankle, knee, hip
     # order is: ['hip_r','knee_r','ankle_r','hip_l','knee_l','ankle_l']
-    obs[6] = eval_poly(qd_coeffs_wrt_time[2], t)
-    obs[7] = eval_poly(qd_coeffs_wrt_time[1], t)
-    obs[8] = eval_poly(qd_coeffs_wrt_time[0], t)
-    obs[9] = eval_poly(qd_coeffs_wrt_time[3], t)
-    obs[10] = eval_poly(qd_coeffs_wrt_time[4], t)
-    obs[11] = eval_poly(qd_coeffs_wrt_time[5], t)
+    obs[6] = eval_poly(qd_coeffs[2], tau)
+    obs[7] = eval_poly(qd_coeffs[1], tau)
+    obs[8] = eval_poly(qd_coeffs[0], tau)
+    obs[9] = eval_poly(qd_coeffs[3], tau)
+    obs[10] = eval_poly(qd_coeffs[4], tau)
+    obs[11] = eval_poly(qd_coeffs[5], tau)
     
     # 12-17: angular velocity of each ankle, knee, hip
     obs[12] = eval_poly(dot_qd_coeffs[2], tau)
@@ -152,7 +152,7 @@ for i in range(cycle_length):
     # 38, 39: distance of next obstacle 
     # 40: radius of obstacle
 
-    left_stance_obs.append(obs)
+    left_stance_obs.append(obs) 
 
 # construct observation maps for RIGHT foot being stance foot
 for i in range(cycle_length):
@@ -295,7 +295,7 @@ critic = Model(inputs=[action_input, observation_input], outputs=x)
 memory = SequentialMemory(limit=1000000, window_length=1)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.2, size=env.noutput)
 agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
-                  memory=memory, nb_steps_warmup_critic=100, nb_steps_warmup_actor=100,
+                  memory=memory, nb_steps_warmup_critic=100, nb_steps_warmup_actor=10000,
                   random_process=random_process, gamma=.99, target_model_update=1e-3,
                   delta_clip=1.)
 agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
@@ -304,7 +304,7 @@ agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
 if args.train:
-    agent.fit(env, nb_steps=nallsteps, visualize=False, verbose=1, nb_max_episode_steps=env.timestep_limit, log_interval=10000)
+    agent.fit(env, nb_steps=nallsteps, action_repetition=2, visualize=False, verbose=1, nb_max_episode_steps=env.timestep_limit, log_interval=10000)
     # After training is done, we save the final weights.
     agent.save_weights(args.model, overwrite=True)
 
