@@ -76,10 +76,12 @@ def eval_poly(coeffs, x):
 
 cycle_length = 71
 
-nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-                   16, 17, 18, 19, 26, 27, 28, 29, 30, 31,
-                   32, 33, 34, 35, 36, 37]
+# nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+#                    16, 17, 18, 19, 26, 27, 28, 29, 30, 31,
+#                    32, 33, 34, 35, 36, 37]
 
+nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 18, 19, 26, 27, 28, 29, 30, 31,
+                   32, 33, 34, 35, 36, 37]
 left_stance_obs = []
 right_stance_obs = []
 
@@ -171,12 +173,12 @@ for i in range(cycle_length):
 
     # 6-11: rotation of each ankle, knee, hip
     # order is: ['hip_r','knee_r','ankle_r','hip_l','knee_l','ankle_l']
-    obs[6] = eval_poly(qd_coeffs_wrt_time[3], t)
-    obs[7] = eval_poly(qd_coeffs_wrt_time[4], t)
-    obs[8] = eval_poly(qd_coeffs_wrt_time[5], t)
-    obs[9] = eval_poly(qd_coeffs_wrt_time[2], t)
-    obs[10] = eval_poly(qd_coeffs_wrt_time[1], t)
-    obs[11] = eval_poly(qd_coeffs_wrt_time[0], t)
+    obs[6] = eval_poly(qd_coeffs[3], tau)
+    obs[7] = eval_poly(qd_coeffs[4], tau)
+    obs[8] = eval_poly(qd_coeffs[5], tau)
+    obs[9] = eval_poly(qd_coeffs[2], tau)
+    obs[10] = eval_poly(qd_coeffs[1], tau)
+    obs[11] = eval_poly(qd_coeffs[0], tau)
     
     # 12-17: angular velocity of each ankle, knee, hip
     obs[12] = eval_poly(dot_qd_coeffs[3], tau)
@@ -264,14 +266,15 @@ nallsteps = args.steps
 # Next, we build a very simple model.
 actor = Sequential()
 actor.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-actor.add(Dense(64))
+actor.add(Dense(32))
 actor.add(Activation('relu'))
-# actor.add(BatchNormalization())
-actor.add(Dense(64))
+actor.add(Dense(32))
 actor.add(Activation('relu'))
-# actor.add(BatchNormalization())
+actor.add(Dense(32))
+actor.add(Activation('relu'))
 actor.add(Dense(nb_actions))
-actor.add(Activation('tanh'))
+actor.add(Activation('sigmoid'))
+#print(actor.summary())
 
 action_input = Input(shape=(nb_actions,), name='action_input')
 observation_input = Input(shape=(1,) + env.observation_space.shape, name='observation_input')
@@ -279,13 +282,15 @@ flattened_observation = Flatten()(observation_input)
 x = concatenate([action_input, flattened_observation])
 x = Dense(64)(x)
 x = Activation('relu')(x)
-# x = BatchNormalization()(x)
-x = Dense(32)(x) 
+x = Dense(64)(x)
 x = Activation('relu')(x)
-# x = BatchNormalization()(x)
+x = Dense(64)(x)
+x = Activation('relu')(x)
 x = Dense(1)(x)
 x = Activation('linear')(x)
 critic = Model(inputs=[action_input, observation_input], outputs=x)
+#print(critic.summary())
+
 
 # ts2 = ts2.reshape([10000, 1, 41])
 # critic.compile(Adam(lr=0.001), loss='mean_squared_error', metrics=['accuracy'])
