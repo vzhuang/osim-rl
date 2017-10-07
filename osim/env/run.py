@@ -98,7 +98,6 @@ class RunEnv(OsimEnv):
                 for i in range(41):
                     f.write('feature ' + str(i) + ': ')
                     f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
-            
                 f.close()                
             reward = np.exp(-reward)#0.1 - np.sqrt(reward) / len(self.match_indices)
         # Compute ligaments penalty

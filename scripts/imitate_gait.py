@@ -155,7 +155,7 @@ for i in range(cycle_length):
     # 38, 39: distance of next obstacle 
     # 40: radius of obstacle
 
-    left_stance_obs.append(obs)
+    left_stance_obs.append(obs) 
 
 # construct observation maps for RIGHT foot being stance foot
 for i in range(cycle_length):
