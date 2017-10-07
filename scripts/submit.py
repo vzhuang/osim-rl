@@ -33,15 +33,15 @@ nb_actions = env.action_space.shape[0]
 # Next, we build a very simple model.
 actor = Sequential()
 actor.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-actor.add(Dense(128))
+actor.add(Dense(32))
 actor.add(Activation('relu'))
-actor.add(BatchNormalization())
-actor.add(Dense(64))
+actor.add(Dense(32))
 actor.add(Activation('relu'))
-actor.add(BatchNormalization())
+actor.add(Dense(32))
+actor.add(Activation('relu'))
 actor.add(Dense(nb_actions))
 actor.add(Activation('sigmoid'))
-print(actor.summary())
+#print(actor.summary())
 
 action_input = Input(shape=(nb_actions,), name='action_input')
 observation_input = Input(shape=(1,) + env.observation_space.shape, name='observation_input')
@@ -56,7 +56,6 @@ x = Activation('relu')(x)
 x = Dense(1)(x)
 x = Activation('linear')(x)
 critic = Model(inputs=[action_input, observation_input], outputs=x)
-print(critic.summary())
 
 # Set up the agent for training
 memory = SequentialMemory(limit=100000, window_length=1)

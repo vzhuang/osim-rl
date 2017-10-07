@@ -64,32 +64,43 @@ class RunEnv(OsimEnv):
         self.current_state = self.last_state
         return self.last_state
 
-    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices):
+    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices, x_indices):
         self.imitate_gait = True
         self.left_obs = left_obs
         self.right_obs = right_obs
         self.cycle_length = cycle_length
         self.match_indices = match_indices
+        self.x_indices = x_indices
+        self.x_offset = self.current_state
 
     def compute_reward(self):        
         if self.imitate_gait:
             cycle = (self.istep / self.cycle_length) % 2
             timestep = self.istep % self.cycle_length
+            # set x_offset
+            if timestep == 0:
+                self.x_offset = self.current_state
             obs_arr = self.left_obs
             if cycle:
                 obs_arr = self.right_obs
-            reward = 0.1 - (obs_arr[timestep][8] - self.current_state[8])**2 - (obs_arr[timestep][11] - self.current_state[11])**2
-            # reward = 0
-            # for idx in self.match_indices:
-            #     reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
-            # with open('/home/ubuntu/imitate_log.txt', 'a') as f:
-            #     f.write('timestep ' + str(timestep)+'\n')
-            #     for i in range(41):
-            #         f.write('feature ' + str(i) + ': ')
-            #         f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
+            # reward = 0.1 - (obs_arr[timestep][8] - self.current_state[8])**2 - (obs_arr[timestep][11] - self.current_state[11])**2
+            reward = 0
+            for idx in self.match_indices:
+                if idx in self.x_indices:
+                    reward += (self.x_offset[idx] + obs_arr[timestep][idx] - self.current_state[idx])**2
+                else:
+                    reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
+            with open('/home/ubuntu/imitate_log.txt', 'a') as f:
+                
+                f.write('timestep ' + str(timestep)+'\n')
+                f.write('last action: ')
+                f.write(" ".join([str(x) for x in self.last_action]) + '\n')
+                for i in range(41):
+                    f.write('feature ' + str(i) + ': ')
+                    f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
             
-            #     f.close()                
-            # return 1 - np.sqrt(reward) / len(self.match_indices)
+                f.close()                
+            reward = np.exp(-reward)#0.1 - np.sqrt(reward) / len(self.match_indices)
         # Compute ligaments penalty
             lig_pen = 0
             # Get ligaments
@@ -160,6 +171,7 @@ class RunEnv(OsimEnv):
         return [100,0,0]
         
     def _step(self, action):
+        self.last_action = action
         self.last_state = self.current_state
         return super(RunEnv, self)._step(action)
 

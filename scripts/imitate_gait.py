@@ -31,7 +31,7 @@ parser.add_argument('--token', dest='token', action='store', required=False)
 args = parser.parse_args()
 
 # Load gait parameters
-gait_path = '/home/ubuntu/new_params.mat'
+gait_path = '/home/ubuntu/still_params.mat'
 gait_params = scipy.io.loadmat(gait_path)
 tau_coeffs = gait_params['tau_coeffs_wrt_time'][0]
 
@@ -81,7 +81,8 @@ cycle_length = 71
 #                    32, 33, 34, 35, 36, 37]
 
 nonzero_indices = [0, 6, 7, 8, 9, 10, 11, 18, 19, 26, 27, 28, 29, 30, 31,
-                   32, 33, 34, 35, 36, 37]
+                   32, 33, 34, 35]
+x_indices = [18, 26, 28, 30, 32, 34]
 left_stance_obs = []
 right_stance_obs = []
 
@@ -118,8 +119,8 @@ for i in range(cycle_length):
     obs[17] = eval_poly(dot_qd_coeffs[5], tau)
     
     # 18, 19: x, y of COM
-    obs[18] = eval_poly(com_X_coeffs, tau)
-    obs[19] = eval_poly(com_Y_coeffs, tau)
+    obs[18] = eval_poly(com_X_coeffs, tau) - (-0.00388174517697 - -0.0697193532044)
+    obs[19] = eval_poly(com_Y_coeffs, tau) - (0.998920554125 - 0.970765639028)
 
     # 20, 21: velocity of COM
 
@@ -128,24 +129,24 @@ for i in range(cycle_length):
     # 24, 25: position of pelvis
 
     # 26, 27: position of torso
-    obs[26] = eval_poly(torso_com_X_coeffs, tau)
-    obs[27] = eval_poly(torso_com_Y_coeffs, tau)
+    obs[26] = eval_poly(torso_com_X_coeffs, tau) - (-0.00162897940695 + 0.0965008489262)
+    obs[27] = eval_poly(torso_com_Y_coeffs, tau) - (1.26664398555 - 0.996431048568)
     
     # 28, 29: position of left toe
-    obs[28] = eval_poly(sf_toe_X_coeffs, tau)
-    obs[29] = eval_poly(sf_toe_Y_coeffs, tau)
+    obs[28] = eval_poly(sf_toe_X_coeffs, tau) - (0.13 - 0.00798)
+    obs[29] = eval_poly(sf_toe_Y_coeffs, tau) - 0.0274
     
     # 30, 31: position of right toe
-    obs[30] = eval_poly(nsf_toe_X_coeffs, tau)
-    obs[31] = eval_poly(nsf_toe_Y_coeffs, tau)
+    obs[30] = eval_poly(nsf_toe_X_coeffs, tau) - (0.13 - 0.00798)
+    obs[31] = eval_poly(nsf_toe_Y_coeffs, tau) - 0.0274
     
     # 32, 33: position of left talus
-    obs[32] = eval_poly(sf_talus_X_coeffs, tau)
-    obs[33] = eval_poly(sf_talus_Y_coeffs, tau)
+    obs[32] = eval_poly(sf_talus_X_coeffs, tau) - 0.119683331742
+    obs[33] = eval_poly(sf_talus_Y_coeffs, tau) - (0.0417232320769 - 0.0229523985286)
     
     # 34, 35: position of right talus
-    obs[34] = eval_poly(nsf_talus_X_coeffs, tau)
-    obs[35] = eval_poly(nsf_talus_Y_coeffs, tau)
+    obs[34] = eval_poly(nsf_talus_X_coeffs, tau) - 0.119683331742
+    obs[35] = eval_poly(nsf_talus_Y_coeffs, tau) - (0.0417232320769 - 0.0229523985286)
     
     # 36, 37: strength of left and right psoas
     obs[36] = 1
@@ -173,7 +174,7 @@ for i in range(cycle_length):
 
     # 6-11: rotation of each ankle, knee, hip
     # order is: ['hip_r','knee_r','ankle_r','hip_l','knee_l','ankle_l']
-    obs[6] = eval_poly(qd_coeffs[3], tau)
+    obs[6] = eval_poly(qd_coeffs[3], tau) 
     obs[7] = eval_poly(qd_coeffs[4], tau)
     obs[8] = eval_poly(qd_coeffs[5], tau)
     obs[9] = eval_poly(qd_coeffs[2], tau)
@@ -189,9 +190,9 @@ for i in range(cycle_length):
     obs[17] = eval_poly(dot_qd_coeffs[0], tau)
     
     # 18, 19: x, y of COM
-    obs[18] = eval_poly(com_X_coeffs, tau)
-    obs[19] = eval_poly(com_Y_coeffs, tau)
-
+    obs[18] = eval_poly(com_X_coeffs, tau) - (-0.00388174517697 - -0.0697193532044)
+    obs[19] = eval_poly(com_Y_coeffs, tau) - (0.998920554125 - 0.970765639028)
+    
     # 20, 21: velocity of COM
 
     # 22, 23: position of head
@@ -199,24 +200,24 @@ for i in range(cycle_length):
     # 24, 25: position of pelvis
 
     # 26, 27: position of torso
-    obs[26] = eval_poly(torso_com_X_coeffs, tau)
-    obs[27] = eval_poly(torso_com_Y_coeffs, tau)
+    obs[26] = eval_poly(torso_com_X_coeffs, tau) - (-0.00162897940695 + 0.0965008489262)
+    obs[27] = eval_poly(torso_com_Y_coeffs, tau) - (1.26664398555 - 0.996431048568)
     
     # 28, 29: position of left toe
-    obs[28] = eval_poly(nsf_toe_X_coeffs, tau)
-    obs[29] = eval_poly(nsf_toe_Y_coeffs, tau)
+    obs[28] = eval_poly(nsf_toe_X_coeffs, tau) - (0.13 - 0.00798)
+    obs[29] = eval_poly(nsf_toe_Y_coeffs, tau) - 0.0274
     
     # 30, 31: position of right toe
-    obs[30] = eval_poly(sf_toe_X_coeffs, tau)
-    obs[31] = eval_poly(sf_toe_Y_coeffs, tau)
+    obs[30] = eval_poly(sf_toe_X_coeffs, tau) - (0.13 - 0.00798)
+    obs[31] = eval_poly(sf_toe_Y_coeffs, tau) - 0.0274
     
     # 32, 33: position of left talus
-    obs[32] = eval_poly(nsf_talus_X_coeffs, tau)
-    obs[33] = eval_poly(nsf_talus_Y_coeffs, tau)
+    obs[32] = eval_poly(nsf_talus_X_coeffs, tau) - 0.119683331742
+    obs[33] = eval_poly(nsf_talus_Y_coeffs, tau) - (0.0417232320769 - 0.0229523985286)
     
     # 34, 35: position of right talus
-    obs[34] = eval_poly(sf_talus_X_coeffs, tau)
-    obs[35] = eval_poly(sf_talus_Y_coeffs, tau)
+    obs[34] = eval_poly(sf_talus_X_coeffs, tau) - 0.119683331742
+    obs[35] = eval_poly(sf_talus_Y_coeffs, tau) - (0.0417232320769 - 0.0229523985286)
     
     # 36, 37: strength of left and right psoas
     obs[36] = 1
@@ -230,7 +231,7 @@ for i in range(cycle_length):
 # Load walking environment
 env = RunEnv(args.visualize)
 env.reset()
-env.set_imitation(left_stance_obs, right_stance_obs, cycle_length, nonzero_indices)
+env.set_imitation(left_stance_obs, right_stance_obs, cycle_length, nonzero_indices, x_indices)
 
 nb_actions = env.action_space.shape[0]
 
@@ -298,9 +299,9 @@ critic = Model(inputs=[action_input, observation_input], outputs=x)
 
 # Set up the agent for training
 memory = SequentialMemory(limit=1000000, window_length=1)
-random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.2, size=env.noutput)
+random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.15, size=env.noutput)
 agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
-                  memory=memory, nb_steps_warmup_critic=100, nb_steps_warmup_actor=100,
+                  memory=memory, nb_steps_warmup_critic=1000, nb_steps_warmup_actor=1000,
                   random_process=random_process, gamma=.99, target_model_update=1e-3,
                   delta_clip=1.)
 agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
@@ -309,7 +310,8 @@ agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
 if args.train:
-    agent.fit(env, nb_steps=nallsteps, visualize=False, verbose=1, nb_max_episode_steps=env.timestep_limit, log_interval=10000)
+    #agent.load_weights(args.model)
+    agent.fit(env, nb_steps=nallsteps, action_repetition=1, visualize=False, verbose=2, nb_max_episode_steps=env.timestep_limit, log_interval=10000)
     # After training is done, we save the final weights.
     agent.save_weights(args.model, overwrite=True)
 
