@@ -36,11 +36,15 @@ class RunEnv(OsimEnv):
         self.create_obstacles()
         state = self.osim_model.model.initSystem()
 
+        self.total_steps = 0
+
         if visualize:
             manager = opensim.Manager(self.osim_model.model)
             manager.setInitialTime(-0.00001)
             manager.setFinalTime(0.0)
             manager.integrate(state)
+
+        self.imitate_gait = False
 
     def setup(self, difficulty, seed=None):
         # create the new env
@@ -57,29 +61,80 @@ class RunEnv(OsimEnv):
     def reset(self, difficulty=2, seed=None):
         super(RunEnv, self).reset()
         self.istep = 0
-        self.last_state = self.get_observation()
         self.setup(difficulty, seed)
+        self.last_state = self.get_observation()
         self.current_state = self.last_state
         return self.last_state
 
-    def compute_reward(self):
+    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices, x_indices, max_ep_len):
+        self.imitate_gait = True
+        self.left_obs = left_obs
+        self.right_obs = right_obs
+        self.cycle_length = cycle_length
+        self.match_indices = match_indices
+        self.x_indices = x_indices
+        self.x_offset = self.current_state
+        self.max_ep_len = max_ep_len
+        self.ep_multiplier = 1
+
+    def compute_reward(self):        
+        if self.imitate_gait:
+            cycle = (self.istep / self.cycle_length) % 2
+            timestep = self.istep % self.cycle_length
+            # set x_offset
+            if timestep == 0:
+                self.x_offset = self.current_state
+            obs_arr = self.left_obs
+            if cycle:
+                obs_arr = self.right_obs
+            # reward = 0.1 - (obs_arr[timestep][8] - self.current_state[8])**2 - (obs_arr[timestep][11] - self.current_state[11])**2
+            reward = 0
+            for idx in self.match_indices:
+                if idx in self.x_indices:
+                    reward += (self.x_offset[idx] + obs_arr[timestep][idx] - self.current_state[idx])**2
+                else:
+                    reward += (obs_arr[timestep][idx] - self.current_state[idx])**2
+            with open('/home/ubuntu/imitate_log.txt', 'a') as f:
+                
+                f.write('timestep ' + str(timestep)+'\n')
+                f.write('last action: ')
+                f.write(" ".join([str(x) for x in self.last_action]) + '\n')
+                for i in range(41):
+                    f.write('feature ' + str(i) + ': ')
+                    f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
+                f.close()                
+            reward = np.exp(-reward)#0.1 - np.sqrt(reward) / len(self.match_indices)
+            return reward
         # Compute ligaments penalty
-        lig_pen = 0
-        # Get ligaments
-        for j in range(20, 26):
-            lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
-            lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
+            # lig_pen = 0
+            # # Get ligaments
+            # for j in range(20, 26):
+            #     lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
+            #     lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
 
-        # Get the pelvis X delta
-        delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
+            # # Get the pelvis X delta
+            # delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
 
-        return delta_x - math.sqrt(lig_pen) * 10e-8
+            # reward += delta_x - math.sqrt(lig_pen) * 10e-8            
+            # return reward
+        else:
+        # Compute ligaments penalty
+            lig_pen = 0
+            # Get ligaments
+            for j in range(20, 26):
+                lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
+                lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
+
+            # Get the pelvis X delta
+            delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
+
+            return delta_x - math.sqrt(lig_pen) * 10e-8
 
     def is_pelvis_too_low(self):
         return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
     
     def is_done(self):
-        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit)
+        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit) or self.istep >= self.max_ep_len * self.ep_multiplier
 
     def configure(self):
         super(RunEnv, self).configure()
@@ -120,7 +175,11 @@ class RunEnv(OsimEnv):
         return [100,0,0]
         
     def _step(self, action):
+        self.last_action = action
         self.last_state = self.current_state
+        self.total_steps += 1
+        if self.total_steps > 10 and self.total_steps % 10000 == 0:
+            self.ep_multiplier += 1
         return super(RunEnv, self)._step(action)
 
     def get_observation(self):
@@ -226,22 +285,34 @@ class RunEnv(OsimEnv):
         pass
 
     def generate_env(self, difficulty, seed, max_obstacles):
-        if seed:
-            np.random.seed(seed)
+        if seed is not None:
+            np.random.seed(seed) # seed the RNG if seed is provided
 
         # obstacles
-        num_obstacles = max_obstacles*(difficulty > 0) #min(2*(difficulty > 0), max_obstacles)
+        num_obstacles = 0
+        xs = []
+        ys = []
+        rs = []
+        
+        if 0 < difficulty:
+            num_obstacles = min(3, max_obstacles)
+            xs = np.random.uniform(1.0, 5.0, num_obstacles)
+            ys = np.random.uniform(-0.25, 0.25, num_obstacles)
+            rs = [0.05 + r for r in np.random.exponential(0.05, num_obstacles)]
 
-        xs = np.random.uniform(1.0, 5.0, num_obstacles)
-        ys = np.random.uniform(-0.25, 0.25, num_obstacles)
-        rs = [0.05 + r for r in np.random.exponential(0.05, num_obstacles)]
+        if 0 < difficulty and 3 < max_obstacles:
+            extra_obstacles = max(min(20, max_obstacles) - num_obstacles, 0)
+            xs = np.concatenate([xs,(np.cumsum(np.random.uniform(2.0, 4.0, extra_obstacles)) + 5)])
+            ys = np.concatenate([ys,np.random.uniform(-0.05, 0.25, extra_obstacles)])
+            rs = rs + [0.05 + r for r in np.random.exponential(0.05, extra_obstacles)]
+            num_obstacles = len(xs)
 
         ys = map(lambda xy: xy[0]*xy[1], list(zip(ys, rs)))
 
         # muscle strength
         rpsoas = 1
         lpsoas = 1
-        if difficulty == 2:
+        if difficulty >= 2:
             rpsoas = 1 - np.random.normal(0, 0.1)
             lpsoas = 1 - np.random.normal(0, 0.1)
             rpsoas = max(0.5, rpsoas)
