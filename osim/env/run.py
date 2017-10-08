@@ -36,6 +36,8 @@ class RunEnv(OsimEnv):
         self.create_obstacles()
         state = self.osim_model.model.initSystem()
 
+        self.total_steps = 0
+
         if visualize:
             manager = opensim.Manager(self.osim_model.model)
             manager.setInitialTime(-0.00001)
@@ -64,7 +66,7 @@ class RunEnv(OsimEnv):
         self.current_state = self.last_state
         return self.last_state
 
-    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices, x_indices):
+    def set_imitation(self, left_obs, right_obs, cycle_length, match_indices, x_indices, max_ep_len):
         self.imitate_gait = True
         self.left_obs = left_obs
         self.right_obs = right_obs
@@ -72,6 +74,8 @@ class RunEnv(OsimEnv):
         self.match_indices = match_indices
         self.x_indices = x_indices
         self.x_offset = self.current_state
+        self.max_ep_len = max_ep_len
+        self.ep_multiplier = 1
 
     def compute_reward(self):        
         if self.imitate_gait:
@@ -100,18 +104,19 @@ class RunEnv(OsimEnv):
                     f.write(str(obs_arr[timestep][i]) + ' ' + str(self.current_state[i]) + '\n')
                 f.close()                
             reward = np.exp(-reward)#0.1 - np.sqrt(reward) / len(self.match_indices)
-        # Compute ligaments penalty
-            lig_pen = 0
-            # Get ligaments
-            for j in range(20, 26):
-                lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
-                lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
-
-            # Get the pelvis X delta
-            delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
-
-            reward += delta_x - math.sqrt(lig_pen) * 10e-8            
             return reward
+        # Compute ligaments penalty
+            # lig_pen = 0
+            # # Get ligaments
+            # for j in range(20, 26):
+            #     lig = opensim.CoordinateLimitForce.safeDownCast(self.osim_model.forceSet.get(j))
+            #     lig_pen += lig.calcLimitForce(self.osim_model.state) ** 2
+
+            # # Get the pelvis X delta
+            # delta_x = self.current_state[self.STATE_PELVIS_X] - self.last_state[self.STATE_PELVIS_X]
+
+            # reward += delta_x - math.sqrt(lig_pen) * 10e-8            
+            # return reward
         else:
         # Compute ligaments penalty
             lig_pen = 0
@@ -129,7 +134,7 @@ class RunEnv(OsimEnv):
         return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
     
     def is_done(self):
-        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit)
+        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit) or self.istep >= self.max_ep_len * self.ep_multiplier
 
     def configure(self):
         super(RunEnv, self).configure()
@@ -172,6 +177,9 @@ class RunEnv(OsimEnv):
     def _step(self, action):
         self.last_action = action
         self.last_state = self.current_state
+        self.total_steps += 1
+        if self.total_steps > 10 and self.total_steps % 10000 == 0:
+            self.ep_multiplier += 1
         return super(RunEnv, self)._step(action)
 
     def get_observation(self):
