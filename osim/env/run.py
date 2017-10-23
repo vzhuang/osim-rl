@@ -134,7 +134,7 @@ class RunEnv(OsimEnv):
         return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
     
     def is_done(self):
-        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit) or self.istep >= self.max_ep_len * self.ep_multiplier
+        return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit) #or self.istep >= self.max_ep_len * self.ep_multiplier
 
     def configure(self):
         super(RunEnv, self).configure()
@@ -178,8 +178,8 @@ class RunEnv(OsimEnv):
         self.last_action = action
         self.last_state = self.current_state
         self.total_steps += 1
-        if self.total_steps > 10 and self.total_steps % 10000 == 0:
-            self.ep_multiplier += 1
+        # if self.total_steps > 10 and self.total_steps % 10000 == 0:
+        #     self.ep_multiplier += 1
         return super(RunEnv, self)._step(action)
 
     def get_observation(self):
