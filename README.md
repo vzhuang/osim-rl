@@ -1,6 +1,6 @@
 # NIPS2017: Learning to run
 
-This repository contains software required for participation in the NIPS 2017 Challenge: Learning to Run. See more details about the challenge [here](https://www.crowdai.org/challenges/nips-2017-learning-to-run). **If you joined the competition before July 28th, please read about the updates in the [version 1.4.1](https://github.com/stanfordnmbl/osim-rl/tree/master/docs).**
+This repository contains software required for participation in the NIPS 2017 Challenge: Learning to Run. See more details about the challenge [here](https://www.crowdai.org/challenges/nips-2017-learning-to-run). **Please read about the latest changes and the logistics of the second round [here](https://github.com/stanfordnmbl/osim-rl/tree/master/docs) (last update October 14th).**
 
 In this competition, you are tasked with developing a controller to enable a physiologically-based human model to navigate a complex obstacle course as quickly as possible. You are provided with a human musculoskeletal model and a physics-based simulation environment where you can synthesize physically and physiologically accurate motion. Potential obstacles include external obstacles like steps, or a slippery floor, along with internal obstacles like muscle weakness or motor noise. You are scored based on the distance you travel through the obstacle course in a set amount of time.
 
@@ -164,7 +164,7 @@ Note that during the submission, the environment will get restarted. Since the e
 
 ### Rules
 
-In order to avoid overfitting to the training environment, the top 10 participants will be asked to resubmit their solutions in the second round of the challenge. Environments in the second round will have the same structure but they will be initialized with different seeds. The final ranking will be based on results from the second round.
+In order to avoid overfitting to the training environment, the top participants (those who obtained 15.0 points or more) will be asked to resubmit their solutions in the second round of the challenge. Environments in the second round will have the same structure but **10 obstacles** and different seeds. In each submission, there will be **10 simulation**. Each participant will have a limit of **3 submissions**. The final ranking will be based on the results from the second round.
 
 Additional rules:
 * You are not allowed to use external datasets (e.g., kinematics of people walking)
