@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 # This provides the variable `__version__`.
 # execfile('opensim/version.py')
-__version__ = "1.5"
+__version__ = "1.5.1"
 
 setup(name='osim-rl',
       version=__version__,
@@ -19,7 +19,7 @@ setup(name='osim-rl',
       packages=find_packages(),
       package_data={'osim': ['models/Geometry/*.vtp', 'models/*.osim']},
       include_package_data=True,
-      install_requires=['numpy','gym'],
+      install_requires=['numpy','gym', 'redis', 'timeout-decorator'],
       classifiers=[
           'Intended Audience :: Science/Research',
           'Operating System :: OS Independent',
